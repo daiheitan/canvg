@@ -1,3 +1,12 @@
+About the Fork
+==============
+
+This fork removes StackBlur, also wrapped the code into a single function to
+deploy it to a web worker easier.
+
+To actually make it work in webworker, you may need another script which
+provides a virtual DOM interface.
+
 Introduction
 ============
 canvg is a SVG parser and renderer. It takes a URL to a SVG file or the text of an SVG file, parses it in JavaScript, and renders the result on a [Canvas](http://dev.w3.org/html5/2dcontext/) element.  The rendering speed of the examples is about as fast as native SVG.

@@ -1,29 +1,8 @@
-/*
- * canvg.js - Javascript SVG parser and renderer on Canvas
- * MIT Licensed
- * Gabe Lerner (gabelerner@gmail.com)
- * http://code.google.com/p/canvg/
- *
- * Requires: rgbcolor.js - http://www.phpied.com/rgb-color-parser-in-javascript/
- */
- (function ( global, factory ) {
+'use strict';
 
-	'use strict';
-
-	// export as AMD...
-	if ( typeof define !== 'undefined' && define.amd ) {
-		define('canvgModule', [ 'rgbcolor', 'stackblur' ], factory );
-	}
-
-	// ...or as browserify
-	else if ( typeof module !== 'undefined' && module.exports ) {
-		module.exports = factory( require( 'rgbcolor' ), require( 'stackblur' ) );
-	}
-
-	global.canvg = factory( global.RGBColor, global.stackBlur );
-
-}( typeof window !== 'undefined' ? window : this, function ( RGBColor, stackBlur ) {
- 
+module.exports = function canvg() {
+	if (self.canvg) return
+	var RGBColor = this.RGBColor;
 	// canvg(target, s)
 	// empty parameters: replace all 'svg' elements on page with 'canvas' elements
 	// target: canvas element or the id of a canvas element
@@ -39,7 +18,7 @@
 	//		 scaleHeight: int => scales vertically to height
 	//		 renderCallback: function => will call the function after the first render is completed
 	//		 forceRedraw: function => will call the function on every frame, if it returns true, will redraw
-	var canvg = function (target, s, opts) {
+	var canvgPainter = function (target, s, opts) {
 		// no parameters
 		if (target == null && s == null && opts == null) {
 			var svgTags = document.querySelectorAll('svg');
@@ -52,7 +31,7 @@
 				svgTag.parentNode.removeChild(svgTag);
 				var div = document.createElement('div');
 				div.appendChild(svgTag);
-				canvg(c, div.innerHTML);
+				canvgPainter(c, div.innerHTML);
 			}
 			return;
 		}
@@ -80,78 +59,6 @@
 			// load from url
 			svg.load(ctx, s);
 		}
-	}
-
-	// see https://developer.mozilla.org/en-US/docs/Web/API/Element.matches
-	var matchesSelector;
-	if (typeof(Element.prototype.matches) != 'undefined') {
-		matchesSelector = function(node, selector) {
-			return node.matches(selector);
-		};
-	} else if (typeof(Element.prototype.webkitMatchesSelector) != 'undefined') {
-		matchesSelector = function(node, selector) {
-			return node.webkitMatchesSelector(selector);
-		};
-	} else if (typeof(Element.prototype.mozMatchesSelector) != 'undefined') {
-		matchesSelector = function(node, selector) {
-			return node.mozMatchesSelector(selector);
-		};
-	} else if (typeof(Element.prototype.msMatchesSelector) != 'undefined') {
-		matchesSelector = function(node, selector) {
-			return node.msMatchesSelector(selector);
-		};
-	} else if (typeof(Element.prototype.oMatchesSelector) != 'undefined') {
-		matchesSelector = function(node, selector) {
-			return node.oMatchesSelector(selector);
-		};
-	} else {
-		// requires Sizzle: https://github.com/jquery/sizzle/wiki/Sizzle-Documentation
-		// or jQuery: http://jquery.com/download/
-		// or Zepto: http://zeptojs.com/#
-		// without it, this is a ReferenceError
-
-		if (typeof jQuery === 'function' || typeof Zepto === 'function') {
-			matchesSelector = function (node, selector) {
-				return $(node).is(selector);
-			};
-		}
-
-		if (typeof matchesSelector === 'undefined') {
-			matchesSelector = Sizzle.matchesSelector;
-		}
-	}
-
-	// slightly modified version of https://github.com/keeganstreet/specificity/blob/master/specificity.js
-	var attributeRegex = /(\[[^\]]+\])/g;
-	var idRegex = /(#[^\s\+>~\.\[:]+)/g;
-	var classRegex = /(\.[^\s\+>~\.\[:]+)/g;
-	var pseudoElementRegex = /(::[^\s\+>~\.\[:]+|:first-line|:first-letter|:before|:after)/gi;
-	var pseudoClassWithBracketsRegex = /(:[\w-]+\([^\)]*\))/gi;
-	var pseudoClassRegex = /(:[^\s\+>~\.\[:]+)/g;
-	var elementRegex = /([^\s\+>~\.\[:]+)/g;
-	function getSelectorSpecificity(selector) {
-		var typeCount = [0, 0, 0];
-		var findMatch = function(regex, type) {
-			var matches = selector.match(regex);
-			if (matches == null) {
-				return;
-			}
-			typeCount[type] += matches.length;
-			selector = selector.replace(regex, ' ');
-		};
-
-		selector = selector.replace(/:not\(([^\)]*)\)/g, '     $1 ');
-		selector = selector.replace(/{[^]*/gm, ' ');
-		findMatch(attributeRegex, 1);
-		findMatch(idRegex, 0);
-		findMatch(classRegex, 1);
-		findMatch(pseudoElementRegex, 2);
-		findMatch(pseudoClassWithBracketsRegex, 1);
-		findMatch(pseudoClassRegex, 1);
-		selector = selector.replace(/[\*\s\+>~]/g, ' ');
-		selector = selector.replace(/[#\.]/g, ' ');
-		findMatch(elementRegex, 2);
-		return typeCount.join('');
 	}
 
 	function build(opts) {
@@ -231,7 +138,7 @@
 			}
 			else if (window.DOMParser)
 			{
-				var parser = new DOMParser();
+				var parser = new window.DOMParser();
 				return parser.parseFromString(xml, 'text/xml');
 			}
 			else
@@ -875,7 +782,7 @@
 				// add attributes
 				for (var i=0; i<node.attributes.length; i++) {
 					var attribute = node.attributes[i];
-					this.attributes[attribute.nodeName] = new svg.Property(attribute.nodeName, attribute.value);
+					this.attributes[attribute.name] = new svg.Property(attribute.name, attribute.value);
 				}
 				
 				this.addStylesFromStyleDefinition();
@@ -2498,7 +2405,7 @@
 								}
 							}
 							svg.Styles[cssClass] = props;
-							svg.StylesSpecificity[cssClass] = getSelectorSpecificity(cssClass);
+							svg.StylesSpecificity[cssClass] = {}
 							if (cssClass == '@font-face') {
 								var fontFamily = props['font-family'].value.replace(/"/g,'');
 								var srcs = props['src'].value.split(',');
@@ -2802,26 +2709,9 @@
 		}
 		svg.Element.feColorMatrix.prototype = new svg.Element.ElementBase;
 
+		// blur, do nothing
+		// TODO support blur
 		svg.Element.feGaussianBlur = function(node) {
-			this.base = svg.Element.ElementBase;
-			this.base(node);
-
-			this.blurRadius = Math.floor(this.attribute('stdDeviation').numValue());
-			this.extraFilterDistance = this.blurRadius;
-
-			this.apply = function(ctx, x, y, width, height) {
-				if (typeof(stackBlur.canvasRGBA) == 'undefined') {
-					svg.log('ERROR: StackBlur.js must be included for blur to work');
-					return;
-				}
-
-				// StackBlur requires canvas be on document
-				ctx.canvas.id = svg.UniqueId();
-				ctx.canvas.style.display = 'none';
-				document.body.appendChild(ctx.canvas);
-				stackBlur.canvasRGBA(ctx.canvas.id, x, y, width, height, this.blurRadius);
-				document.body.removeChild(ctx.canvas);
-			}
 		}
 		svg.Element.feGaussianBlur.prototype = new svg.Element.ElementBase;
 
@@ -2892,7 +2782,6 @@
 					svg.Mouse.onmousemove(p.x, p.y);
 				};
 			}
-
 			var e = svg.CreateElement(dom.documentElement);
 			e.root = true;
 			e.addStylesFromStyleDefinition();
@@ -3055,7 +2944,7 @@
 
 	if (typeof(CanvasRenderingContext2D) != 'undefined') {
 		CanvasRenderingContext2D.prototype.drawSvg = function(s, dx, dy, dw, dh) {
-			canvg(this.canvas, s, {
+			canvgPainter(this.canvas, s, {
 				ignoreMouse: true,
 				ignoreAnimation: true,
 				ignoreDimensions: true,
@@ -3067,7 +2956,6 @@
 			});
 		}
 	}
-
-	return canvg;
-
-}));
+	if (self && !self.canvg) self.canvg = canvgPainter;
+	return canvgPainter;
+}
