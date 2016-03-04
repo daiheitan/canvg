@@ -743,11 +743,7 @@ function build(opts) {
 		// base render children
 		this.renderChildren = function(ctx) {
 			for (var i=0; i<this.children.length; i++) {
-				var t1 = Date.now()
 				this.children[i].render(ctx);
-				if (this.root) {
-					console.log('rendering', this.children[i], 'used', Date.now() - t1)
-				}
 			}
 		}
 
@@ -757,7 +753,7 @@ function build(opts) {
 			child.parent = this;
 			if (child.type != 'title') { this.children.push(child);	}
 		}
-		
+
 		this.addStylesFromStyleDefinition = function () {
 			// add styles
 			for (var selector in svg.Styles) {
