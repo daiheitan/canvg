@@ -2302,6 +2302,10 @@ function build(opts) {
 			var self = this;
 			this.img.onload = function() { self.loaded = true; }
 			this.img.onerror = function() { svg.log('ERROR: image "' + href + '" not found'); self.loaded = true; }
+			if (this.attribute('imageWidth') && this.attribute('imageHeight')) {
+				this.img.width = this.attribute('imageWidth').toPixels('x')
+				this.img.height = this.attribute('imageHeight').toPixels('y')
+			}
 			this.img.src = href;
 		}
 		else {
